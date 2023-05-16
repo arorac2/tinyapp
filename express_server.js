@@ -72,3 +72,11 @@ app.get("/urls", (req, res) => {
     delete urlDatabase[id]; 
     res.redirect("/urls"); 
   });
+
+  app.post("/urls/:id/edit", (req, res) => {
+    const id = req.params.id;
+    const newURL = req.body.newURL;
+    urlDatabase[id] = newURL; 
+  
+    res.redirect("/urls"); 
+  });

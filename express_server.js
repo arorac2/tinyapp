@@ -16,6 +16,20 @@ function generateRandomString() {
     return randomString;
   }
 
+
+const users = {
+    userRandomID: {
+        id: "userRandomID",
+        email: "user@example.com",
+        password: "purple-monkey-dinosaur", 
+    },
+    user2RandomID: {
+        id: "user2RandomID",
+        email: "user2@example.com",
+        password: "dishwasher-funk",
+    },
+  };
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -37,8 +51,16 @@ app.get("/hello", (req, res) => {
     res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+// app.get("/urls", (req, res) => {
+//     const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+//     res.render("urls_index", templateVars);
+//   });
 app.get("/urls", (req, res) => {
-    const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+    const userId = req.cookies["user_id"];
+    const templateVars = {
+      urls: urlDatabase,
+      user: users[userId],
+    };
     res.render("urls_index", templateVars);
   });
 
@@ -97,6 +119,83 @@ app.get("/urls", (req, res) => {
 //   });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("username");
+    res.clearCookie("user_id"); // Clear the user_id cookie
+    res.redirect("/urls");
+  });
+
+  app.get("/register", (req, res) => {
+    res.render("register");
+  });
+  
+  app.post("/register", (req, res) => {
+    const { email, password } = req.body;
+  
+    // Check if email or password are empty strings
+    if (!email || !password) {
+      res.status(400).send("Email and password cannot be empty.");
+      return;
+    }
+  
+    // Check if email already exists in users database
+    const existingUser = getUserByEmail(email);
+    if (existingUser) {
+      res.status(400).send("Email already exists.");
+      return;
+    }
+  
+    // Generate a random user ID and create a new user object
+    const userId = generateRandomString();
+    const newUser = {
+      id: userId,
+      email: email,
+      password: password,
+    };
+  
+    // Add the new user object to the users database
+    users[userId] = newUser;
+  
+    // Set the user_id cookie with the user's ID
+    res.cookie("user_id", userId);
+  
+    // Redirect the user to the /urls page
+    res.redirect("/urls");
+  });
+  
+  // Helper function to lookup user by email
+  function getUserByEmail(email) {
+    for (const userId in users) {
+      const user = users[userId];
+      if (user.email === email) {
+        return user;
+      }
+    }
+    return null;
+  }
+  
+  
+  
+  
+  
+  
+  
+
+app.post("/register", (req, res) => {
+    const { email, password } = req.body; // Extract email and password from the request body
+    const userId = generateRandomString(); // Generate a random user ID
+  
+    // Create a new user object
+    const newUser = {
+      id: userId,
+      email: email,
+      password: password,
+    };
+  
+    // Add the new user object to the users database
+    users[userId] = newUser;
+  
+    // Set the user_id cookie with the user's ID
+    res.cookie("user_id", userId);
+  
+    // Redirect the user to the /urls page
     res.redirect("/urls");
   });

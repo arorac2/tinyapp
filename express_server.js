@@ -55,11 +55,13 @@ app.get("/hello", (req, res) => {
 //     const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
 //     res.render("urls_index", templateVars);
 //   });
+
 app.get("/urls", (req, res) => {
     const userId = req.cookies["user_id"];
+    const user = users[userId];
     const templateVars = {
       urls: urlDatabase,
-      user: users[userId],
+      username: user ? user.email : null,
     };
     res.render("urls_index", templateVars);
   });
@@ -105,12 +107,24 @@ app.get("/urls", (req, res) => {
     res.redirect("/urls"); 
   });
 
-  app.post("/login", (req, res) => {
-    const { username } = req.body;
-    res.cookie("username", username);
-    res.redirect("/urls");
+  app.get("/login", (req, res) => {
+    res.render("login");
   });
 
+
+  app.post("/login", (req, res) => {
+    const { email, password } = req.body;
+    const user = getUserByEmail(email);
+    
+    if (!user || user.password !== password) {
+      res.status(401).send("Invalid email or password");
+      return;
+    }
+  
+    res.cookie("user_id", user.id);
+    res.redirect("/urls");
+  });
+  
 //   app.get("/urls", (req, res) => {
 //     const templateVars = {
 //       username: "test",
@@ -119,14 +133,14 @@ app.get("/urls", (req, res) => {
 //   });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("user_id"); // Clear the user_id cookie
+    res.clearCookie("user_id"); 
     res.redirect("/urls");
   });
 
   app.get("/register", (req, res) => {
     res.render("register");
   });
-  
+
   app.post("/register", (req, res) => {
     const { email, password } = req.body;
   
@@ -142,8 +156,7 @@ app.post("/logout", (req, res) => {
       res.status(400).send("Email already exists.");
       return;
     }
-  
-    // Generate a random user ID and create a new user object
+
     const userId = generateRandomString();
     const newUser = {
       id: userId,
@@ -151,17 +164,12 @@ app.post("/logout", (req, res) => {
       password: password,
     };
   
-    // Add the new user object to the users database
     users[userId] = newUser;
-  
-    // Set the user_id cookie with the user's ID
     res.cookie("user_id", userId);
-  
-    // Redirect the user to the /urls page
     res.redirect("/urls");
   });
   
-  // Helper function to lookup user by email
+
   function getUserByEmail(email) {
     for (const userId in users) {
       const user = users[userId];
@@ -173,29 +181,20 @@ app.post("/logout", (req, res) => {
   }
   
   
-  
-  
-  
-  
-  
 
 app.post("/register", (req, res) => {
-    const { email, password } = req.body; // Extract email and password from the request body
-    const userId = generateRandomString(); // Generate a random user ID
-  
-    // Create a new user object
+    const { email, password } = req.body; 
+    const userId = generateRandomString(); 
+
     const newUser = {
       id: userId,
       email: email,
       password: password,
     };
-  
-    // Add the new user object to the users database
+
     users[userId] = newUser;
   
-    // Set the user_id cookie with the user's ID
     res.cookie("user_id", userId);
-  
-    // Redirect the user to the /urls page
     res.redirect("/urls");
   });
+

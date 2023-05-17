@@ -4,6 +4,7 @@ const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+
 app.set("view engine", "ejs");
 
 function generateRandomString() {
@@ -66,24 +67,41 @@ app.get("/urls", (req, res) => {
     res.render("urls_index", templateVars);
   });
 
-  app.get("/urls/:id", (req, res) => {
-    const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
-    res.render("urls_show", templateVars);
-  });
-
   app.get("/urls/new", (req, res) => {
-    res.render("urls_new");
+    const userId = req.cookies["user_id"];
+    console.log("cookies:", req.cookies);
+    if (!userId) {
+      res.redirect("/login"); // Redirect to the login page if not logged in
+      return;
+    }
+  
+    const templateVars = {
+      username: users[userId].email,
+    };
+    res.render("urls_new", templateVars);
   });
+  
 
   app.use(express.urlencoded({ extended: true }));
 
   app.post("/urls", (req, res) => {
-    const shortURL = generateRandomString(); 
-    urlDatabase[shortURL] = req.body.longURL; 
-    const response = { shortURL }; 
-    res.status(200).json(response); 
+    const userId = req.cookies["user_id"];
+    if (!userId) {
+      res.status(401).send("You need to be logged in to shorten URLs.");
+      return;
+    }
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = req.body.longURL;
+    const response = { shortURL };
+    res.status(200).json(response);
   });
 
+  app.get("/urls/:id", (req, res) => {
+    console.log("LOOK HERE");
+    const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
+    res.render("urls_show", templateVars);
+  });
+  
   app.get("/u/:id", (req, res) => {
     const shortURL = req.params.id; 
     const longURL = urlDatabase[shortURL]; 
@@ -109,10 +127,14 @@ app.get("/urls", (req, res) => {
 
   app.get("/login", (req, res) => {
     const userId = req.cookies["user_id"];
-    const user = users[userId];
+    if (userId) {
+      res.redirect("/urls"); // Redirect to the /urls page if already logged in
+      return;
+    }
+  
     const templateVars = {
-        username: user ? user.email : null,
-      };
+      username: null,
+    };
     res.render("login", templateVars);
   });
 

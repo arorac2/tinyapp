@@ -108,7 +108,12 @@ app.get("/urls", (req, res) => {
   });
 
   app.get("/login", (req, res) => {
-    res.render("login");
+    const userId = req.cookies["user_id"];
+    const user = users[userId];
+    const templateVars = {
+        username: user ? user.email : null,
+      };
+    res.render("login", templateVars);
   });
 
 
@@ -117,7 +122,7 @@ app.get("/urls", (req, res) => {
     const user = getUserByEmail(email);
     
     if (!user || user.password !== password) {
-      res.status(401).send("Invalid email or password");
+      res.status(403).send("Invalid email or password");
       return;
     }
   
@@ -133,12 +138,17 @@ app.get("/urls", (req, res) => {
 //   });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("user_id"); 
-    res.redirect("/urls");
+    res.clearCookie("user_id");
+    res.redirect("/login");
   });
 
   app.get("/register", (req, res) => {
-    res.render("register");
+    const userId = req.cookies["user_id"];
+    const user = users[userId];
+    const templateVars = {
+        username: user ? user.email : null,
+      };
+    res.render("register",templateVars);
   });
 
   app.post("/register", (req, res) => {
@@ -170,15 +180,15 @@ app.post("/logout", (req, res) => {
   });
   
 
-  function getUserByEmail(email) {
-    for (const userId in users) {
-      const user = users[userId];
-      if (user.email === email) {
-        return user;
-      }
+ function getUserByEmail(email) {
+  for (const userId in users) {
+    const user = users[userId];
+    if (user.email === email) {
+      return user;
     }
-    return null;
   }
+  return null;
+}
   
   
 

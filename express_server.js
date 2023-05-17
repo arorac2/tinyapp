@@ -31,10 +31,26 @@ const users = {
     },
   };
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
+  const urlDatabase = {
+    b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW",
+    },
+    i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW",
+    },
+  };
+
+  function urlsForUser(userID) {
+    const userURLs = {};
+    for (const shortURL in urlDatabase) {
+      if (urlDatabase[shortURL].userID === userID) {
+        userURLs[shortURL] = urlDatabase[shortURL];
+      }
+    }
+    return userURLs;
+  }
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -58,14 +74,19 @@ app.get("/hello", (req, res) => {
 //   });
 
 app.get("/urls", (req, res) => {
-    const userId = req.cookies["user_id"];
-    const user = users[userId];
+    const userID = req.cookies["user_id"];
+    if (!userID) {
+      res.render("urls_not_logged_in");
+      return;
+    }
+    const userURLs = urlsForUser(userID);
     const templateVars = {
-      urls: urlDatabase,
-      username: user ? user.email : null,
+      urls: userURLs,
+      username: users[userID].email,
     };
     res.render("urls_index", templateVars);
   });
+
 
   app.get("/urls/new", (req, res) => {
     const userId = req.cookies["user_id"];
@@ -74,8 +95,8 @@ app.get("/urls", (req, res) => {
       res.redirect("/login"); // Redirect to the login page if not logged in
       return;
     }
-  
     const templateVars = {
+      urls: urlDatabase,
       username: users[userId].email,
     };
     res.render("urls_new", templateVars);
@@ -97,11 +118,27 @@ app.get("/urls", (req, res) => {
   });
 
   app.get("/urls/:id", (req, res) => {
-    console.log("LOOK HERE");
-    const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
+    const userID = req.cookies["user_id"];
+    const shortURL = req.params.id;
+    if (!userID) {
+      res.render("urls_error", {
+        errorMessage: "You must be logged in to view this URL.",
+      });
+      return;
+    }
+    if (urlDatabase[shortURL].userID !== userID) {
+      res.render("urls_error", {
+        errorMessage: "You do not own this URL.",
+      });
+      return;
+    }
+    const templateVars = {
+      id: shortURL,
+      longURL: urlDatabase[shortURL].longURL,
+    };
     res.render("urls_show", templateVars);
   });
-  
+
   app.get("/u/:id", (req, res) => {
     const shortURL = req.params.id; 
     const longURL = urlDatabase[shortURL]; 
@@ -152,12 +189,6 @@ app.get("/urls", (req, res) => {
     res.redirect("/urls");
   });
   
-//   app.get("/urls", (req, res) => {
-//     const templateVars = {
-//       username: "test",
-//     };
-//     res.render("urls_index", templateVars);
-//   });
 
 app.post("/logout", (req, res) => {
     res.clearCookie("user_id");

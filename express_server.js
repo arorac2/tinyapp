@@ -2,9 +2,9 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 app.use(cookieParser());
-
-
+app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
 function generateRandomString() {
@@ -80,6 +80,7 @@ app.get("/urls", (req, res) => {
       return;
     }
     const userURLs = urlsForUser(userID);
+    console.log("here:", users[userID]);
     const templateVars = {
       urls: userURLs,
       username: users[userID].email,
@@ -180,7 +181,7 @@ app.get("/urls", (req, res) => {
     const { email, password } = req.body;
     const user = getUserByEmail(email);
     
-    if (!user || user.password !== password) {
+    if (!user || !bcrypt.compareSync(password, user.password)) {
       res.status(403).send("Invalid email or password");
       return;
     }
@@ -221,10 +222,11 @@ app.post("/logout", (req, res) => {
     }
 
     const userId = generateRandomString();
+    const hashedPassword = bcrypt.hashSync(password, 10); // Hash the password
     const newUser = {
       id: userId,
       email: email,
-      password: password,
+      password: hashedPassword,
     };
   
     users[userId] = newUser;
@@ -242,7 +244,7 @@ app.post("/logout", (req, res) => {
   }
   return null;
 }
-  
+
   
 
 app.post("/register", (req, res) => {

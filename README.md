@@ -6,6 +6,8 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 (1) The user is prompted with a log in or register page
 (2) Once successfully registeed
+<img width="422" alt="image" src="https://github.com/arorac2/tinyapp/assets/88734236/00fc33cd-6405-49ec-9bb2-4f97916449d7">
+
 
 ## Dependencies
 
